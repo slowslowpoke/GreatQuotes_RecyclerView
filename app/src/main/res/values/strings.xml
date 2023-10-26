@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Great Quotes</string>
+    <string name="stub_quote">With great power comes zero responsibility</string>
+    <string name="stub_author">Unknown but smart author</string>
+    <string name="new_quote">New quote</string>
+    <string name="add_quote">Add quote</string>
+</resources>
