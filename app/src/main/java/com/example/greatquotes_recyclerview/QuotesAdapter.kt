@@ -1,24 +1,62 @@
 package com.example.greatquotes_recyclerview
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import androidx.recyclerview.widget.AsyncListDiffer
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.example.greatquotes_recyclerview.databinding.ItemQuoteBinding
 
-class QuotesAdapter(var quotesList: List<Quote>): RecyclerView.Adapter<QuotesAdapter.QuoteViewHolder>() {
+class QuotesAdapter : RecyclerView.Adapter<QuotesAdapter.QuoteViewHolder>() {
 
-    inner class QuoteViewHolder(itemView: View): RecyclerView.ViewHolder(itemView)
+    inner class QuoteViewHolder(private val binding: ItemQuoteBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(quote: Quote) {
+            binding.apply {
+                binding.tvQuote.text = quote.q
+                binding.tvAuthor.text = quote.a
+                root.setOnClickListener {
+                    onItemClickListener?.let {
+                        it(quote)
+                    }
+                }
+            }
+        }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): QuoteViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_quote, parent, false)
-        return QuoteViewHolder(view)
     }
 
-    override fun getItemCount() = quotesList.size
+    private var onItemClickListener: ((Quote) -> Unit)? = null
+
+    fun setOnItemClickListener(listener: (Quote) -> Unit) {
+        onItemClickListener = listener
+    }
+
+    private val differCallback = object : DiffUtil.ItemCallback<Quote>() {
+        override fun areItemsTheSame(oldItem: Quote, newItem: Quote): Boolean {
+            return oldItem.q == newItem.q
+        }
+
+        override fun areContentsTheSame(oldItem: Quote, newItem: Quote): Boolean {
+            return oldItem == newItem
+        }
+    }
+
+    val differ = AsyncListDiffer(this, differCallback)
+
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): QuoteViewHolder {
+        val binding = ItemQuoteBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return QuoteViewHolder(binding)
+    }
+
+    override fun getItemCount() = differ.currentList.size
 
     override fun onBindViewHolder(holder: QuoteViewHolder, position: Int) {
-        holder.itemView.findViewById<TextView>(R.id.tvAuthor).text = quotesList[position].a
-        holder.itemView.findViewById<TextView>(R.id.tvQuote).text = quotesList[position].q
+        val quote = differ.currentList[position]
+        holder.bind(quote)
     }
 }

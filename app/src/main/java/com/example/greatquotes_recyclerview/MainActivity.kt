@@ -1,23 +1,28 @@
 package com.example.greatquotes_recyclerview
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.greatquotes_recyclerview.databinding.ActivityMainBinding
 import com.example.greatquotes_recyclerview.retrofit.RetrofitInstance
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
-const val TAG = "GreatQuotesApp"
 
 class MainActivity : AppCompatActivity() {
+    private val TAG = "GreatQuotesApp"
     private lateinit var binding: ActivityMainBinding
     private var quotesList: MutableList<Quote> = mutableListOf()
+    private lateinit var quotesAdapter: QuotesAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,13 +30,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.progressBar.isVisible = false
-        binding.rvQuotesList.adapter = QuotesAdapter(listOf())
-
+        setupRecyclerView()
         lifecycleScope.launch {
 
             binding.progressBar.isVisible = true
 
-            val retrfofitResponse = try {
+            val retrofitResponse = try {
                 RetrofitInstance.api.getAllQuotes()
             } catch (e: IOException) {
                 Log.d(TAG, "IOException, check your internet")
@@ -43,13 +47,10 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
-            if (retrfofitResponse.isSuccessful) {
+            if (retrofitResponse.isSuccessful) {
                 binding.progressBar.isVisible = false
-                quotesList.addAll(retrfofitResponse.body()!!)
-                binding.rvQuotesList.apply {
-                    adapter = QuotesAdapter(quotesList)
-                    layoutManager = LinearLayoutManager(this.context)
-                }
+                quotesList.addAll(retrofitResponse.body()!!)
+                quotesAdapter.differ.submitList(quotesList)
             } else Toast.makeText(
                 this@MainActivity,
                 "Wrong response from server",
@@ -58,23 +59,48 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        binding.btnAddQuote.setOnClickListener {addItem()}
+        binding.btnAddQuote.setOnClickListener { addQuote() }
+        quotesAdapter.setOnItemClickListener {deleteQuote(it) }
 
     }
 
 
+    private fun setupRecyclerView() {
+        quotesAdapter = QuotesAdapter()
+        binding.rvQuotesList.apply {
+            adapter = quotesAdapter
+            layoutManager = LinearLayoutManager(this@MainActivity)
+        }
+    }
 
 
-    private fun addItem() {
+    private fun addQuote() {
         val newQuoteText = binding.edQuote.text.toString()
         if (newQuoteText == "") return
         val newQuoteAuthor = "Amina, the smartest philosopher"
         val newQuote = Quote(newQuoteText, newQuoteAuthor, "", "")
         quotesList.add(newQuote)
-        binding.rvQuotesList.adapter!!.notifyItemInserted(quotesList.size - 1)
+        quotesAdapter.differ.submitList(quotesList)
         binding.rvQuotesList.scrollToPosition(quotesList.size - 1)
         binding.edQuote.setText("")
 
+    }
+
+
+    private fun deleteQuote(quote: Quote) {
+        AlertDialog.Builder(this)
+            .setMessage("Delete this deep quote by ${quote.a}?")
+            .setNegativeButton("No") { _, _ -> }
+            .setPositiveButton("Yes") { _, _ ->
+                val index = quotesList.indexOf(quote)
+                Log.d(TAG, "Index of the quote: $index")
+
+                val newList = quotesList.toMutableList().apply {
+                    remove(quote)
+                }
+                quotesAdapter.differ.submitList(newList)
+            }
+            .create().show()
     }
 
 }
