@@ -2,13 +2,15 @@ package com.example.greatquotes_recyclerview
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.greatquotes_recyclerview.databinding.ItemQuoteBinding
 
 class QuotesAdapter : RecyclerView.Adapter<QuotesAdapter.QuoteViewHolder>() {
-    var quotesList: MutableList<Quote> = mutableListOf()
+    val quotesList: MutableList<Quote> = mutableListOf()
+
     inner class QuoteViewHolder(private val binding: ItemQuoteBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(quote: Quote) {
@@ -16,14 +18,31 @@ class QuotesAdapter : RecyclerView.Adapter<QuotesAdapter.QuoteViewHolder>() {
                 binding.tvQuote.text = quote.q
                 binding.tvAuthor.text = quote.a
                 binding.btnDelete.setOnClickListener {
-                    quotesList.remove(quote)
-                    differ.submitList(quotesList.toList())
+                    showDeleteConfirmationDialog(quote)
                 }
+            }
+        }
+
+        private fun showDeleteConfirmationDialog(quote: Quote) {
+            val builder = AlertDialog.Builder(itemView.context)
+            builder.apply {
+                setMessage("Delete this smart quote by ${quote.a}?")
+                setPositiveButton("Yes") { _, _ ->
+                    deleteQuote(quote)
+                }
+                setNegativeButton("Cancel") { dialog, _ ->
+                }
+                show()
             }
         }
 
     }
 
+
+    fun deleteQuote(quote: Quote) {
+        quotesList.remove(quote)
+        differ.submitList(quotesList.toList())
+    }
 
     private val differCallback = object : DiffUtil.ItemCallback<Quote>() {
         override fun areItemsTheSame(oldItem: Quote, newItem: Quote): Boolean {
