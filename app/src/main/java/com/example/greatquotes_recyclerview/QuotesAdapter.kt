@@ -8,28 +8,22 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.greatquotes_recyclerview.databinding.ItemQuoteBinding
 
 class QuotesAdapter : RecyclerView.Adapter<QuotesAdapter.QuoteViewHolder>() {
-
+    var quotesList: MutableList<Quote> = mutableListOf()
     inner class QuoteViewHolder(private val binding: ItemQuoteBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(quote: Quote) {
             binding.apply {
                 binding.tvQuote.text = quote.q
                 binding.tvAuthor.text = quote.a
-                root.setOnClickListener {
-                    onItemClickListener?.let {
-                        it(quote)
-                    }
+                binding.btnDelete.setOnClickListener {
+                    quotesList.remove(quote)
+                    differ.submitList(quotesList.toList())
                 }
             }
         }
 
     }
 
-    private var onItemClickListener: ((Quote) -> Unit)? = null
-
-    fun setOnItemClickListener(listener: (Quote) -> Unit) {
-        onItemClickListener = listener
-    }
 
     private val differCallback = object : DiffUtil.ItemCallback<Quote>() {
         override fun areItemsTheSame(oldItem: Quote, newItem: Quote): Boolean {
